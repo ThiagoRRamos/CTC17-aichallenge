@@ -26,7 +26,9 @@ public class MyBot extends Bot {
     
     private Map<Tile, Tile> orders = new HashMap<Tile, Tile>();
     private Set<Tile> enemyHills = new HashSet<Tile>();
-
+    private DiffusionMap foodMap;
+    private DiffusionMap enemyHillMap;
+     private DiffusionMap myHillMap;
     private Set<Tile> unseenTiles;
 
 
@@ -57,8 +59,17 @@ public class MyBot extends Bot {
 
     @Override
     public void doTurn() {
+        System.err.println("A");
         Ants ants = getAnts();
         orders.clear();
+        if(foodMap == null){
+            foodMap = new DiffusionMap(ants);
+            enemyHillMap = new DiffusionMap(ants);
+            myHillMap = new DiffusionMap(ants);
+        }
+        foodMap.clear();
+        enemyHillMap.clear();
+        myHillMap.clear();
         Map<Tile, Tile> foodTargets = new HashMap<Tile, Tile>();
 
         if (unseenTiles == null) {
@@ -76,52 +87,80 @@ public class MyBot extends Bot {
                 locIter.remove();
             }
         }
-
         for (Tile myHill : ants.getMyHills()) {
             orders.put(myHill, null);
         }
 
-        // find close food
-        List<Route> foodRoutes = new ArrayList<Route>();
-        TreeSet<Tile> sortedFood = new TreeSet<Tile>(ants.getFoodTiles());
+        // find close food;
         TreeSet<Tile> sortedAnts = new TreeSet<Tile>(ants.getMyAnts());
-        for (Tile foodLoc : sortedFood) {
-            for (Tile antLoc : sortedAnts) {
-                int distance = ants.getDistance(antLoc, foodLoc);
-                Route route = new Route(antLoc, foodLoc, distance);
-                foodRoutes.add(route);
-            }
+        int numberOfAnts = sortedAnts.size();
+
+        for (Tile foodLoc : ants.getFoodTiles()) {
+            foodMap.addElement(foodLoc, 200, 2, 1);
         }
-        Collections.sort(foodRoutes);
-        for (Route route : foodRoutes) {
-            if (!foodTargets.containsKey(route.getEnd())
-                    && !foodTargets.containsValue(route.getStart())
-                    && doMoveLocation(route.getStart(), route.getEnd())) {
-                foodTargets.put(route.getEnd(), route.getStart());
-            }
-        }
-        // add new hills to set
+
+         // add new hills to set
         for (Tile enemyHill : ants.getEnemyHills()) {
             if (!enemyHills.contains(enemyHill)) {
                 enemyHills.add(enemyHill);
             }
         }
+
+        for (Tile enemyAnt : ants.getEnemyAnts()) {
+            enemyHillMap.addElement(enemyAnt, -5, 2, -1);
+        }
         // attack hills
-        List<Route> hillRoutes = new ArrayList<Route>();
+        Set<Tile> eliminatedHills = new HashSet<Tile>();
         for (Tile hillLoc : enemyHills) {
-            for (Tile antLoc : sortedAnts) {
-                if (!orders.containsValue(antLoc)) {
-                    int distance = ants.getDistance(antLoc, hillLoc);
-                    Route route = new Route(antLoc, hillLoc, distance);
-                    hillRoutes.add(route);
+            if(ants.isVisible(hillLoc) && !ants.getEnemyHills().contains(hillLoc)){
+                eliminatedHills.add(hillLoc);
+            }else{
+                System.err.println("Not eliminated hill - "+hillLoc);
+                enemyHillMap.addElement(hillLoc, 100000, 2, 1);
+            }  
+        }
+        for(Tile elHill : eliminatedHills){
+            System.err.println("Hill eliminated - "+elHill);
+            enemyHills.remove(elHill);
+        }
+
+        for (Tile myHill : ants.getMyHills()) {
+            myHillMap.addElement(myHill, 100, 2, 1);
+            if (ants.getMyAnts().contains(myHill) && !orders.containsValue(myHill)) {
+                for (Aim direction : Aim.values()) {
+                    if (doMoveDirection(myHill, direction)) {
+                        break;
+                    }
                 }
             }
         }
-        Collections.sort(hillRoutes);
-        for (Route route : hillRoutes) {
-            doMoveLocation(route.getStart(), route.getEnd());
+        int count = 0;
+        for (Tile antLoc : sortedAnts) {
+            if (!orders.containsValue(antLoc)){
+                if(count > numberOfAnts/2)
+                    break;
+                Aim direction = foodMap.getBestDirection(antLoc);
+                if(direction!=null){
+                    doMoveDirection(antLoc,direction);
+                    count++;
+                    System.err.println("Formiga indo atras de comida");
+                }
+            }
         }
-        // explore unseen areas
+        count = 0;
+        for (Tile antLoc : sortedAnts) {
+            if (!orders.containsValue(antLoc)){
+                if(count > numberOfAnts/3)
+                    break;
+                Aim direction = enemyHillMap.getBestDirection(antLoc);
+                if(direction!=null){
+                    doMoveDirection(antLoc,direction);
+                    count++;
+                    System.err.println("Formiga indo atras de hill inimigo");
+                }
+            }
+        }
+        count = 0;
         for (Tile antLoc : sortedAnts) {
             if (!orders.containsValue(antLoc)) {
                 List<Route> unseenRoutes = new ArrayList<Route>();
@@ -133,19 +172,25 @@ public class MyBot extends Bot {
                 Collections.sort(unseenRoutes);
                 for (Route route : unseenRoutes) {
                     if (doMoveLocation(route.getStart(), route.getEnd())) {
+                        System.err.println("Formiga explorando");
                         break;
                     }
                 }
             }
         }
-        for (Tile myHill : ants.getMyHills()) {
-            if (ants.getMyAnts().contains(myHill) && !orders.containsValue(myHill)) {
-                for (Aim direction : Aim.values()) {
-                    if (doMoveDirection(myHill, direction)) {
-                        break;
-                    }
+        count = 0;
+        for (Tile antLoc : sortedAnts) {
+            if (!orders.containsValue(antLoc)){
+                if(count > numberOfAnts/3)
+                    break;
+                count++;
+                Aim direction = myHillMap.getBestDirection(antLoc);
+                if(direction!=null){
+                    System.err.println("Formiga indo atras de hill proprio");
+                    doMoveDirection(antLoc,direction);
                 }
             }
         }
+        System.err.println(enemyHillMap);
     }
 }

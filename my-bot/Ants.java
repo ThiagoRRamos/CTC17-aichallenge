@@ -489,6 +489,23 @@ public class Ants {
             myHills.add(tile);
     }
 
+    public boolean isPassable(Tile t){
+        int row = t.getRow();
+        int col = t.getCol();
+        return map[row][col] != Ilk.WATER;
+    }
+
+    public List<Tile> possibleNextStates(Tile t){
+        List<Tile> res = new ArrayList<Tile>();
+        for(Aim d : Aim.values()){
+            Tile dest = getTile(t, d);
+            if(isPassable(dest)){
+                res.add(dest);
+            }
+        }
+        return res;
+    }
+
     /**
      * Issues an order by sending it to the system output.
      * 
