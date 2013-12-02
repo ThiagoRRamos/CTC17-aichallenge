@@ -4,6 +4,7 @@ import java.util.Queue;
 import java.util.LinkedList;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.Comparator;
 
 public class DiffusionMap {
 	
@@ -22,6 +23,10 @@ public class DiffusionMap {
 
 	public void clear(){
 		values = new double[rows][cols];
+	}
+
+	public Comparator<Tile> getComparator(){
+		return new TileComparator(this, ants);
 	}
 
 	public double getValue(Tile t){

@@ -1,1 +1,1 @@
-python tools/playgame.py --map_file tools/maps/example/tutorial1.map "java -jar my-bot/MyBot.jar" "python tools/sample_bots/python/HunterBot.py" --log_dir game_logs --turns 100 --scenario --player_seed 42 --verbose -e
+python tools/playgame.py --map_file tools/maps/example/tutorial1.map "java -jar my-bot/MyBot.jar" "python tools/sample_bots/python/HunterBot.py" --log_dir game_logs --turns 200 --scenario --player_seed 42 --verbose -e

@@ -494,6 +494,12 @@ public class Ants {
         int col = t.getCol();
         return map[row][col] != Ilk.WATER;
     }
+    
+    public boolean isOccupied(Tile t){
+    	int row = t.getRow();
+        int col = t.getCol();
+        return map[row][col] != Ilk.LAND;
+    }
 
     public List<Tile> possibleNextStates(Tile t){
         List<Tile> res = new ArrayList<Tile>();
