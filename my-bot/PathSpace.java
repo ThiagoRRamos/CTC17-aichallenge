@@ -18,12 +18,9 @@ public class PathSpace {
 		Queue<Tile> frontier = new LinkedList<>();
 		HashMap<Tile, Tile> parenthood = new HashMap<>();
 		frontier.add(myHill);
-		System.err.println("AAAAAAAAA");
 		while (!frontier.isEmpty()) {
 			Tile now = frontier.poll();
-			System.err.println(now);
 			if (!ants.isOccupied(now)) {
-				System.err.println("Achou");
 				return resultingPath(now, parenthood);
 			}
 			alreadySeen.add(now);

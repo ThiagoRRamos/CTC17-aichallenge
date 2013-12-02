@@ -68,7 +68,7 @@ public class DiffusionMap {
 			addValue(n, val);
 			if(val*k > 1){
 				for(Tile no : ants.possibleNextStates(n)){
-					if(!alreadyUsed.contains(no)){
+					if(!alreadyUsed.contains(no) && ants.isPassable(no)){
 						tiles.add(no);
 						vals.add(val/decreaseFactor);
 					}
@@ -86,7 +86,7 @@ public class DiffusionMap {
 		StringBuffer sb = new StringBuffer();
 		for(int i=0;i<ants.getRows(); i++){
 			for(int j=0;j<ants.getCols(); j++){
-				sb.append(String.format("%2.0f", getValue(i,j)/10.0f)+" ");
+				sb.append(String.format("%2.0f", getValue(i,j)/100.0f)+" ");
 			}
 			sb.append("\n");
 		}

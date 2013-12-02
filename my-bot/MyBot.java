@@ -4,8 +4,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
 
 /**
@@ -30,7 +32,12 @@ public class MyBot extends Bot {
 	private DiffusionMap foodMap;
 	private DiffusionMap enemyHillMap;
 	private DiffusionMap myHillMap;
+	private DiffusionMap exploreMap;
+	private DiffusionMap spacingAnts;
 	private Set<Tile> unseenTiles;
+	private Queue<Tile> frontier;
+	private boolean goFrontier = false;// a
+	private HashSet<Tile> processedFrontier;
 
 	private boolean doMoveDirection(Tile antLoc, Aim direction) {
 		Ants ants = getAnts();
@@ -47,7 +54,7 @@ public class MyBot extends Bot {
 
 	private boolean doMoveDirectionIDontCare(Tile antLoc, Aim direction) {
 		Ants ants = getAnts();
-		// Track all moves, prevent collisions
+		// Track all moves, prevent collisions, I dont care
 		Tile newLoc = ants.getTile(antLoc, direction);
 		if (!orders.containsKey(newLoc)) {
 			ants.issueOrder(antLoc, direction);
@@ -84,17 +91,30 @@ public class MyBot extends Bot {
 
 	@Override
 	public void doTurn() {
-		System.err.println("A");
 		Ants ants = getAnts();
 		orders.clear();
 		if (foodMap == null) {
 			foodMap = new DiffusionMap(ants);
 			enemyHillMap = new DiffusionMap(ants);
 			myHillMap = new DiffusionMap(ants);
+			exploreMap = new DiffusionMap(ants);
+			frontier = new LinkedList<>();
+			spacingAnts = new DiffusionMap(ants);
+			processedFrontier = new HashSet<>();
+			goFrontier = true;
+		} else if (goFrontier) {
+			for (Tile mh : ants.getMyHills()) {
+				frontier.add(mh);
+			}
+			System.err.println("Initializing frontier");
+			System.err.println(frontier);
+			goFrontier = false;
 		}
+
 		foodMap.clear();
 		enemyHillMap.clear();
 		myHillMap.clear();
+		exploreMap.clear();
 
 		if (unseenTiles == null) {
 			unseenTiles = new HashSet<Tile>();
@@ -111,6 +131,25 @@ public class MyBot extends Bot {
 				locIter.remove();
 			}
 		}
+		int count = 0;
+		while (count < frontier.size()) {
+			Tile t = frontier.poll();
+			if (!unseenTiles.contains(t)) {
+				count = 0;
+				for (Tile neigh : ants.getNeighbors(t)) {
+					if (!processedFrontier.contains(neigh)) {
+						frontier.add(neigh);
+						processedFrontier.add(neigh);
+					}
+				}
+			} else {
+				frontier.add(t);
+			}
+			count++;
+		}
+		for (Tile t : frontier) {
+			exploreMap.addElement(t, 4000, 3, 1);
+		}
 		for (Tile myHill : ants.getMyHills()) {
 			orders.put(myHill, null);
 		}
@@ -120,8 +159,12 @@ public class MyBot extends Bot {
 		int numberOfAnts = sortingAnts.size();
 		int numberofMyHills = ants.getMyHills().size();
 
+		for(Tile ma : ants.getMyAnts()){
+			spacingAnts.addElement(ma, -200, 2, -1);
+		}
+		
 		for (Tile foodLoc : ants.getFoodTiles()) {
-			foodMap.addElement(foodLoc, 300, 2, 1);
+			foodMap.addElement(foodLoc, 2000, 3, 1);
 		}
 
 		// add new hills to set
@@ -166,11 +209,11 @@ public class MyBot extends Bot {
 				// }
 			}
 		}
-		int count = 0;
+		count = 0;
 		Collections.sort(sortingAnts, foodMap.getComparator());
 		for (Tile antLoc : sortingAnts) {
 			if (!orders.containsValue(antLoc)) {
-				if (count > numberOfAnts / 2)
+				if (count > (numberOfAnts + 1) / 2)
 					break;
 				Aim direction = foodMap.getBestDirection(antLoc);
 				if (direction != null) {
@@ -184,7 +227,7 @@ public class MyBot extends Bot {
 		count = 0;
 		for (Tile antLoc : sortingAnts) {
 			if (!orders.containsValue(antLoc)) {
-				if (count > numberOfAnts / 3)
+				if (count > numberOfAnts / 2)
 					break;
 				Aim direction = enemyHillMap.getBestDirection(antLoc);
 				if (direction != null) {
@@ -198,23 +241,17 @@ public class MyBot extends Bot {
 		}
 		count = 0;
 		for (Tile antLoc : sortingAnts) {
+			if (count > numberOfAnts / 3)
+				break;
 			if (!orders.containsValue(antLoc)) {
-				if (count > numberOfAnts / 3)
-					break;
-				List<Route> unseenRoutes = new ArrayList<Route>();
-				for (Tile unseenLoc : unseenTiles) {
-					int distance = ants.getDistance(antLoc, unseenLoc);
-					Route route = new Route(antLoc, unseenLoc, distance);
-					unseenRoutes.add(route);
-				}
-				Collections.sort(unseenRoutes);
-				for (Route route : unseenRoutes) {
-					if (doMoveLocation(route.getStart(), route.getEnd())) {
+				Aim direction = spacingAnts.getBestDirection(antLoc);
+				if (direction != null) {
+					if (doMoveDirection(antLoc, direction)) {
+						count++;//a
 						System.err.println("Formiga explorando");
-						count++;
-						break;
 					}
 				}
+
 			}
 		}
 		count = 0;
@@ -225,9 +262,9 @@ public class MyBot extends Bot {
 				Aim direction = myHillMap.getBestDirection(antLoc);
 				if (direction != null) {
 					if (doMoveDirection(antLoc, direction)) {
-						count++;
+						count++;// a
 						System.err
-								.println("Formiga indo atras de hill proprio");
+								.println("Formiga indo atras de hill proprio");	
 					}
 				}
 			}
