@@ -36,10 +36,10 @@ public class MyBot extends Bot {
 	private DiffusionMap spacingAnts;
 	private Set<Tile> unseenTiles;
 	private Queue<Tile> frontier;
-	private boolean goFrontier = false;// a
+	private boolean goFrontier = false;// aaaa
 	private HashSet<Tile> processedFrontier;
 
-	private boolean doMoveDirection(Tile antLoc, Aim direction) {
+	public boolean doMoveDirection(Tile antLoc, Aim direction) {
 		Ants ants = getAnts();
 		// Track all moves, prevent collisions
 		Tile newLoc = ants.getTile(antLoc, direction);
@@ -52,9 +52,9 @@ public class MyBot extends Bot {
 		}
 	}
 
-	private boolean doMoveDirectionIDontCare(Tile antLoc, Aim direction) {
+	public boolean doMoveDirectionIDontCare(Tile antLoc, Aim direction) {
 		Ants ants = getAnts();
-		// Track all moves, prevent collisions, I dont care
+		// Track all moves, prevent collisions, I dont carea
 		Tile newLoc = ants.getTile(antLoc, direction);
 		if (!orders.containsKey(newLoc)) {
 			ants.issueOrder(antLoc, direction);
@@ -65,9 +65,9 @@ public class MyBot extends Bot {
 		}
 	}
 
-	private boolean doMoveLocation(Tile antLoc, Tile destLoc) {
+	public boolean doMoveLocation(Tile antLoc, Tile destLoc) {
 		Ants ants = getAnts();
-		// Track targets to prevent 2 ants to the same location
+		// Track targets to prevent 2 ants to the same locationaa
 		List<Aim> directions = ants.getDirections(antLoc, destLoc);
 		for (Aim direction : directions) {
 			if (doMoveDirection(antLoc, direction)) {
@@ -77,7 +77,7 @@ public class MyBot extends Bot {
 		return false;
 	}
 
-	private boolean doMoveLocationIDontCare(Tile antLoc, Tile destLoc) {
+	public boolean doMoveLocationIDontCare(Tile antLoc, Tile destLoc) {
 		Ants ants = getAnts();
 		// Track targets to prevent 2 ants to the same location
 		List<Aim> directions = ants.getDirections(antLoc, destLoc);
@@ -92,7 +92,7 @@ public class MyBot extends Bot {
 	@Override
 	public void doTurn() {
 		Ants ants = getAnts();
-		orders.clear();
+		orders.clear();// aaa
 		if (foodMap == null) {
 			foodMap = new DiffusionMap(ants);
 			enemyHillMap = new DiffusionMap(ants);
@@ -124,6 +124,12 @@ public class MyBot extends Bot {
 				}
 			}
 		}
+
+		AttackAnalysis aa = new AttackAnalysis(ants, this);
+		aa.process();
+
+		aa.decideAttacks();
+
 		// remove any tiles that can be seen, run each turn
 		for (Iterator<Tile> locIter = unseenTiles.iterator(); locIter.hasNext();) {
 			Tile next = locIter.next();
@@ -131,7 +137,7 @@ public class MyBot extends Bot {
 				locIter.remove();
 			}
 		}
-		int count = 0;
+		int count = 0;// a
 		while (count < frontier.size()) {
 			Tile t = frontier.poll();
 			if (!unseenTiles.contains(t)) {
@@ -151,7 +157,8 @@ public class MyBot extends Bot {
 			exploreMap.addElement(t, 4000, 3, 1);
 		}
 		for (Tile myHill : ants.getMyHills()) {
-			orders.put(myHill, null);
+			if (ants.getMyAnts().size() > 5)
+				orders.put(myHill, null);
 		}
 
 		// find close food;
@@ -160,8 +167,15 @@ public class MyBot extends Bot {
 		int numberofMyHills = ants.getMyHills().size();
 
 		for (Tile ma : ants.getMyAnts()) {
-			spacingAnts.addElement(ma, -200, 2, -1);
+			spacingAnts.addElement(ma, -200, 2, -1, false);
+			for (Tile n : ants.getNeighbors(ma)) {
+				for (Tile n2 : ants.getNeighbors(n)) {
+					if (!ants.isPassable(n2))
+						spacingAnts.addElement(n2, -100, 10, -1, false);
+				}
+			}
 		}
+		// System.err.println(spacingAnts);
 
 		for (Tile foodLoc : ants.getFoodTiles()) {
 			foodMap.addElement(foodLoc, 2000, 3, 1);
@@ -184,7 +198,6 @@ public class MyBot extends Bot {
 					&& !ants.getEnemyHills().contains(hillLoc)) {
 				eliminatedHills.add(hillLoc);
 			} else {
-				System.err.println("Not eliminated hill - " + hillLoc);
 				enemyHillMap.addElement(hillLoc, 100000, 2, 1);
 			}
 		}
@@ -259,10 +272,6 @@ public class MyBot extends Bot {
 				}
 			}
 		}
-		System.err.println("My hill: " + countGoForMyHill);
-		System.err.println("Enemy hill: " + countGoForEnemyHill);
-		System.err.println("Food : " + countGoForFood);
-		System.err.println("Space: " + countGoForSpace);
 
 	}
 }
