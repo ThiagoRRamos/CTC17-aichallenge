@@ -159,10 +159,10 @@ public class MyBot extends Bot {
 		int numberOfAnts = sortingAnts.size();
 		int numberofMyHills = ants.getMyHills().size();
 
-		for(Tile ma : ants.getMyAnts()){
+		for (Tile ma : ants.getMyAnts()) {
 			spacingAnts.addElement(ma, -200, 2, -1);
 		}
-		
+
 		for (Tile foodLoc : ants.getFoodTiles()) {
 			foodMap.addElement(foodLoc, 2000, 3, 1);
 		}
@@ -175,7 +175,7 @@ public class MyBot extends Bot {
 		}
 
 		for (Tile enemyAnt : ants.getEnemyAnts()) {
-			enemyHillMap.addElement(enemyAnt, -9, 2, -1);
+			enemyHillMap.addElement(enemyAnt, -20, 2, -1);
 		}
 		// attack hills
 		Set<Tile> eliminatedHills = new HashSet<Tile>();
@@ -202,72 +202,67 @@ public class MyBot extends Bot {
 				for (Tile or : res.keySet()) {
 					doMoveLocationIDontCare(or, res.get(or));
 				}
-				// for (Aim direction : Aim.values()) {
-				// if (doMoveDirection(myHill, direction)) {
-				// break;
-				// }
-				// }
 			}
 		}
-		count = 0;
+		int countGoForFood = 0;
 		Collections.sort(sortingAnts, foodMap.getComparator());
 		for (Tile antLoc : sortingAnts) {
 			if (!orders.containsValue(antLoc)) {
-				if (count > (numberOfAnts + 1) / 2)
+				if (countGoForFood > (numberOfAnts + 1) / 2)
 					break;
 				Aim direction = foodMap.getBestDirection(antLoc);
 				if (direction != null) {
 					if (doMoveDirection(antLoc, direction)) {
-						count++;
-						System.err.println("Formiga indo atras de comida");
+						countGoForFood++;
 					}
 				}
 			}
 		}
-		count = 0;
+		int countGoForEnemyHill = 0;
 		for (Tile antLoc : sortingAnts) {
 			if (!orders.containsValue(antLoc)) {
-				if (count > numberOfAnts / 2)
+				if (countGoForEnemyHill > numberOfAnts / 3)
 					break;
 				Aim direction = enemyHillMap.getBestDirection(antLoc);
 				if (direction != null) {
 					if (doMoveDirection(antLoc, direction)) {
-						count++;
-						System.err
-								.println("Formiga indo atras de hill inimigo");
+						countGoForEnemyHill++;
 					}
 				}
 			}
 		}
-		count = 0;
+		int countGoForSpace = 0;
 		for (Tile antLoc : sortingAnts) {
-			if (count > numberOfAnts / 3)
+			if (countGoForSpace > numberOfAnts / 3)
 				break;
 			if (!orders.containsValue(antLoc)) {
 				Aim direction = spacingAnts.getBestDirection(antLoc);
 				if (direction != null) {
 					if (doMoveDirection(antLoc, direction)) {
-						count++;//a
-						System.err.println("Formiga explorando");
+						countGoForSpace++;// a
 					}
 				}
 
 			}
 		}
-		count = 0;
+		int countGoForMyHill = 0;
 		for (Tile antLoc : sortingAnts) {
 			if (!orders.containsValue(antLoc)) {
-				if (count > numberOfAnts / 6 || count > 10 * numberofMyHills)
+				if (countGoForMyHill > numberOfAnts / 6
+						|| countGoForMyHill > 10 * numberofMyHills)
 					break;
 				Aim direction = myHillMap.getBestDirection(antLoc);
 				if (direction != null) {
 					if (doMoveDirection(antLoc, direction)) {
-						count++;// a
-						System.err
-								.println("Formiga indo atras de hill proprio");	
+						countGoForMyHill++;// a
 					}
 				}
 			}
 		}
+		System.err.println("My hill: " + countGoForMyHill);
+		System.err.println("Enemy hill: " + countGoForEnemyHill);
+		System.err.println("Food : " + countGoForFood);
+		System.err.println("Space: " + countGoForSpace);
+
 	}
 }
